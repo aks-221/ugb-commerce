@@ -1,0 +1,213 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
+
+@layer base {
+  :root {
+    /* UGB Gaston Berger - Design System */
+    /* Primary: Dark Maroon/Burgundy from UGB logo */
+    --background: 35 25% 97%;
+    --foreground: 15 40% 12%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 15 40% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 15 40% 12%;
+
+    /* Bleu UGB - Stronger blue for interactive elements */
+    --primary: 210 55% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Sandy beige secondary */
+    --secondary: 35 35% 92%;
+    --secondary-foreground: 15 40% 20%;
+
+    /* Warm sand muted */
+    --muted: 30 20% 91%;
+    --muted-foreground: 15 15% 40%;
+
+    /* Gold accent */
+    --accent: 38 70% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 20% 86%;
+    --input: 210 20% 88%;
+    --ring: 210 55% 50%;
+
+    /* Light brand blue for backgrounds */
+    --primary-light: 210 60% 85%;
+
+    --radius: 0.75rem;
+
+    /* Custom tokens */
+    --maroon: 8 55% 32%;
+    --maroon-light: 8 45% 42%;
+    --maroon-dark: 8 60% 22%;
+    --sand: 38 40% 94%;
+    --sand-dark: 35 30% 85%;
+    --gold: 38 70% 50%;
+    --gold-light: 38 65% 65%;
+    --warm-white: 40 30% 99%;
+    --deep-brown: 15 45% 15%;
+    
+    /* Gradients */
+    --gradient-hero: linear-gradient(135deg, hsl(210 55% 50%) 0%, hsl(210 60% 38%) 100%);
+    --gradient-card: linear-gradient(180deg, hsl(0 0% 100%) 0%, hsl(210 30% 97%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(38 70% 50%) 0%, hsl(30 65% 40%) 100%);
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px -2px hsl(15 40% 15% / 0.08);
+    --shadow-md: 0 8px 24px -6px hsl(15 40% 15% / 0.12);
+    --shadow-lg: 0 16px 48px -12px hsl(15 40% 15% / 0.18);
+    --shadow-card: 0 4px 16px -4px hsl(15 40% 15% / 0.1);
+    --shadow-hover: 0 12px 32px -8px hsl(15 40% 15% / 0.15);
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 210 55% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 35 35% 92%;
+    --sidebar-accent-foreground: 15 40% 20%;
+    --sidebar-border: 210 20% 88%;
+    --sidebar-ring: 210 55% 50%;
+  }
+
+  .dark {
+    --background: 15 25% 7%;
+    --foreground: 35 25% 95%;
+
+    --card: 15 22% 11%;
+    --card-foreground: 35 25% 95%;
+
+    --popover: 15 22% 11%;
+    --popover-foreground: 35 25% 95%;
+
+    --primary: 205 70% 50%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 15 18% 16%;
+    --secondary-foreground: 35 25% 90%;
+
+    --muted: 15 18% 18%;
+    --muted-foreground: 30 12% 58%;
+
+    --accent: 38 65% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 15 18% 18%;
+    --input: 15 18% 18%;
+    --ring: 205 70% 50%;
+
+    --sidebar-background: 15 22% 9%;
+    --sidebar-foreground: 35 25% 90%;
+    --sidebar-primary: 205 70% 50%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 15 18% 16%;
+    --sidebar-accent-foreground: 35 25% 90%;
+    --sidebar-border: 15 18% 18%;
+    --sidebar-ring: 205 70% 50%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Poppins', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', serif;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground hover:bg-primary/90 transition-all duration-200;
+  }
+  
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground hover:bg-secondary/80 transition-all duration-200;
+  }
+  
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-lg hover:-translate-y-1;
+  }
+  
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  
+  .gradient-accent {
+    background: var(--gradient-accent);
+  }
+  
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  
+  .shadow-hover {
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+  
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+  
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+  
+  .animate-scale-in {
+    animation: scaleIn 0.3s ease-out forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
