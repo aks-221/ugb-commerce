@@ -95,12 +95,12 @@ const Index = () => {
         <div className="grid grid-cols-3 gap-4 max-w-xl mx-auto">
           <div className="bg-card rounded-2xl p-4 text-center shadow-card border border-border/50">
             <Users className="h-6 w-6 text-primary mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">500+</p>
+            <p className="text-2xl font-bold text-foreground">{stats?.totalUsers || 0}+</p>
             <p className="text-xs text-muted-foreground">Étudiants</p>
           </div>
           <div className="bg-card rounded-2xl p-4 text-center shadow-card border border-border/50">
             <Store className="h-6 w-6 text-primary mx-auto mb-2" />
-            <p className="text-2xl font-bold text-foreground">100+</p>
+            <p className="text-2xl font-bold text-foreground">{stats?.totalVendors || 0}+</p>
             <p className="text-xs text-muted-foreground">Vendeurs</p>
           </div>
           <div className="bg-card rounded-2xl p-4 text-center shadow-card border border-border/50">
