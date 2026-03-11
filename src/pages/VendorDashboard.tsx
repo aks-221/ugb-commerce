@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   Package,
@@ -39,6 +40,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useVendorPaymentRequests, useCreatePaymentRequest } from "@/hooks/usePaymentRequests";
+import { supabase } from "@/integrations/supabase/client";
 
 const VendorDashboard = () => {
   const navigate = useNavigate();
@@ -49,6 +51,13 @@ const VendorDashboard = () => {
   const [deleteProductId, setDeleteProductId] = useState<string | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("wave");
   const [transactionRef, setTransactionRef] = useState("");
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileForm, setProfileForm] = useState({
+    shop_name: "",
+    phone: "",
+    pavilion: "",
+    room: "",
+  });
 
   const { data: products = [], isLoading: productsLoading } = useVendorProducts(vendorProfile?.id);
   const { data: orders = [], isLoading: ordersLoading } = useVendorOrders(vendorProfile?.id);
@@ -60,6 +69,67 @@ const VendorDashboard = () => {
   const createPaymentRequest = useCreatePaymentRequest();
 
   const hasPendingPayment = paymentRequests.some(p => p.status === "pending");
+
+  // Initialize profile form when vendorProfile loads
+  useEffect(() => {
+    if (vendorProfile) {
+      setProfileForm({
+        shop_name: vendorProfile.shop_name || "",
+        phone: vendorProfile.phone || "",
+        pavilion: vendorProfile.pavilion || "",
+        room: vendorProfile.room || "",
+      });
+    }
+  }, [vendorProfile]);
+
+  const handleEditProfile = () => {
+    setIsEditingProfile(true);
+    if (vendorProfile) {
+      setProfileForm({
+        shop_name: vendorProfile.shop_name || "",
+        phone: vendorProfile.phone || "",
+        pavilion: vendorProfile.pavilion || "",
+        room: vendorProfile.room || "",
+      });
+    }
+  };
+
+  const handleSaveProfile = async () => {
+    if (!vendorProfile) return;
+    
+    try {
+      const { error } = await supabase
+        .from('vendor_profiles')
+        .update({
+          shop_name: profileForm.shop_name,
+          phone: profileForm.phone,
+          pavilion: profileForm.pavilion,
+          room: profileForm.room,
+        })
+        .eq('id', vendorProfile.id);
+      
+      if (error) throw error;
+      
+      toast.success("Profil mis à jour avec succès !");
+      setIsEditingProfile(false);
+      // Refresh vendor profile
+      window.location.reload();
+    } catch (error: any) {
+      toast.error(error.message || "Erreur lors de la mise à jour du profil");
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditingProfile(false);
+    if (vendorProfile) {
+      setProfileForm({
+        shop_name: vendorProfile.shop_name || "",
+        phone: vendorProfile.phone || "",
+        pavilion: vendorProfile.pavilion || "",
+        room: vendorProfile.room || "",
+      });
+    }
+  };
 
   const handleSubmitPayment = async () => {
     if (!vendorProfile) return;
@@ -543,9 +613,17 @@ const VendorDashboard = () => {
         {activeTab === "profil" && (
           <div className="max-w-xl">
             <div className="bg-card rounded-2xl border border-border p-6">
-              <h2 className="text-lg font-semibold text-foreground mb-6">
-                Informations de retrait
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-lg font-semibold text-foreground">
+                  Informations de retrait
+                </h2>
+                {!isEditingProfile && (
+                  <Button variant="outline" size="sm" onClick={handleEditProfile}>
+                    <Edit2 className="h-4 w-4 mr-2" />
+                    Modifier
+                  </Button>
+                )}
+              </div>
               
               <div className="space-y-4">
                 <div>
@@ -554,9 +632,12 @@ const VendorDashboard = () => {
                   </label>
                   <input
                     type="text"
-                    defaultValue={vendorProfile?.shop_name}
-                    readOnly
-                    className="w-full h-12 px-4 rounded-xl bg-secondary border-0 text-foreground"
+                    value={isEditingProfile ? profileForm.shop_name : vendorProfile?.shop_name || ""}
+                    onChange={(e) => isEditingProfile && setProfileForm({...profileForm, shop_name: e.target.value})}
+                    readOnly={!isEditingProfile}
+                    className={`w-full h-12 px-4 rounded-xl border-0 text-foreground ${
+                      isEditingProfile ? "bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20" : "bg-secondary"
+                    }`}
                   />
                 </div>
                 <div>
@@ -565,9 +646,12 @@ const VendorDashboard = () => {
                   </label>
                   <input
                     type="tel"
-                    defaultValue={vendorProfile?.phone}
-                    readOnly
-                    className="w-full h-12 px-4 rounded-xl bg-secondary border-0 text-foreground"
+                    value={isEditingProfile ? profileForm.phone : vendorProfile?.phone || ""}
+                    onChange={(e) => isEditingProfile && setProfileForm({...profileForm, phone: e.target.value})}
+                    readOnly={!isEditingProfile}
+                    className={`w-full h-12 px-4 rounded-xl border-0 text-foreground ${
+                      isEditingProfile ? "bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20" : "bg-secondary"
+                    }`}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -577,9 +661,12 @@ const VendorDashboard = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue={vendorProfile?.pavilion}
-                      readOnly
-                      className="w-full h-12 px-4 rounded-xl bg-secondary border-0 text-foreground"
+                      value={isEditingProfile ? profileForm.pavilion : vendorProfile?.pavilion || ""}
+                      onChange={(e) => isEditingProfile && setProfileForm({...profileForm, pavilion: e.target.value})}
+                      readOnly={!isEditingProfile}
+                      className={`w-full h-12 px-4 rounded-xl border-0 text-foreground ${
+                        isEditingProfile ? "bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20" : "bg-secondary"
+                      }`}
                     />
                   </div>
                   <div>
@@ -588,13 +675,35 @@ const VendorDashboard = () => {
                     </label>
                     <input
                       type="text"
-                      defaultValue={vendorProfile?.room}
-                      readOnly
-                      className="w-full h-12 px-4 rounded-xl bg-secondary border-0 text-foreground"
+                      value={isEditingProfile ? profileForm.room : vendorProfile?.room || ""}
+                      onChange={(e) => isEditingProfile && setProfileForm({...profileForm, room: e.target.value})}
+                      readOnly={!isEditingProfile}
+                      className={`w-full h-12 px-4 rounded-xl border-0 text-foreground ${
+                        isEditingProfile ? "bg-secondary focus:outline-none focus:ring-2 focus:ring-primary/20" : "bg-secondary"
+                      }`}
                     />
                   </div>
                 </div>
               </div>
+
+              {isEditingProfile && (
+                <div className="flex gap-3 mt-6">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleCancelEdit}
+                  >
+                    Annuler
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleSaveProfile}
+                    disabled={!profileForm.shop_name.trim() || !profileForm.phone.trim()}
+                  >
+                    Enregistrer
+                  </Button>
+                </div>
+              )}
             </div>
 
             {/* Subscription */}
