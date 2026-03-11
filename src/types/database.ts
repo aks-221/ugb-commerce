@@ -43,6 +43,17 @@ export interface VendorProfile {
   created_at: string;
   updated_at: string;
 }
+// Public view of vendor (fewer fields, used in product joins)
+export interface VendorProfilePublic {
+  id: string | null;
+  shop_name: string | null;
+  pavilion: string | null;
+  room: string | null;
+  phone: string | null;
+  description: string | null;
+  is_verified: boolean | null;
+  created_at: string | null;
+}
 
 export interface Product {
   id: string;
@@ -52,13 +63,22 @@ export interface Product {
   description: string | null;
   price: number;
   image_url: string | null;
+  image_url_2: string | null;
+  image_url_3: string | null;
+  image_url_4: string | null;
+  image_url_5: string | null;
   stock: number;
   is_available: boolean;
   created_at: string;
   updated_at: string;
   // Joined data
-  vendor?: VendorProfile;
+  vendor?: VendorProfilePublic;
   category?: Category;
+}
+export interface OrderClientProfile {
+  user_id: string;
+  full_name: string;
+  phone: string;
 }
 
 export interface Order {
@@ -68,11 +88,12 @@ export interface Order {
   status: OrderStatus;
   total_amount: number;
   message: string | null;
+  order_type: 'cart' | 'whatsapp';
   created_at: string;
   updated_at: string;
   // Joined data
   vendor?: VendorProfile;
-  client?: Profile;
+  client?: OrderClientProfile;
   items?: OrderItem[];
 }
 

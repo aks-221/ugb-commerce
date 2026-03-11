@@ -56,6 +56,7 @@ export const useAllProducts = () => {
 };
 
 // Admin: All orders
+// Admin: All orders
 export const useAllOrders = () => {
   return useQuery({
     queryKey: ['admin-orders'],
@@ -74,18 +75,21 @@ export const useAllOrders = () => {
 
       if (error) throw error;
 
-      // Fetch client profiles
-      const clientIds = [...new Set(data.map(o => o.client_id))];
-      const { data: profiles } = await supabase
-        .from('profiles')
-        .select('*')
-        .in('user_id', clientIds);
+      // Filtre les client_id null (commandes anonymes WhatsApp)
+      const clientIds = [...new Set(data.map(o => o.client_id).filter(Boolean))];
       
-      const profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
-      
+      let profileMap = new Map();
+      if (clientIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', clientIds);
+        profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      }
+
       return data.map(order => ({
         ...order,
-        client: profileMap.get(order.client_id),
+        client: order.client_id ? profileMap.get(order.client_id) : null,
       })) as Order[];
     },
   });

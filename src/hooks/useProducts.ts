@@ -12,9 +12,6 @@ export const useProducts = (filters?: {
   return useQuery({
     queryKey: ['products', filters],
     queryFn: async () => {
-      // Get current date for daily rotation
-      const today = new Date();
-      const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
       
       let query = supabase
         .from('products')
@@ -43,30 +40,16 @@ export const useProducts = (filters?: {
       const { data, error } = await query;
       if (error) throw error;
       
-      // Apply daily rotation + popularity sorting in JavaScript
-      const sortedProducts = (data as Product[]).sort((a, b) => {
-        // Get vendor hash for rotation (based on vendor_id)
-        const vendorAHash = a.vendor_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        const vendorBHash = b.vendor_id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-        
-        // Daily rotation offset
-        const rotationOffset = dayOfYear % 7; // Rotate every 7 days
-        
-        // Calculate rotation score (lower = higher priority)
-        const rotationScoreA = (vendorAHash + rotationOffset) % 100;
-        const rotationScoreB = (vendorBHash + rotationOffset) % 100;
-        
-        // If rotation scores are very different, prioritize rotation
-        if (Math.abs(rotationScoreA - rotationScoreB) > 20) {
-          return rotationScoreA - rotationScoreB;
-        }
-        
-        // Otherwise, prioritize by popularity (created_at as proxy for popularity)
-        // Newer products get slight priority within same rotation group
-        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-      });
+      // Apply random sorting for complete fairness
+      const shuffledProducts = [...(data as Product[])];
       
-      return sortedProducts;
+      // Fisher-Yates shuffle algorithm for true randomness
+      for (let i = shuffledProducts.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffledProducts[i], shuffledProducts[j]] = [shuffledProducts[j], shuffledProducts[i]];
+      }
+      
+      return shuffledProducts;
     },
   });
 };
@@ -125,6 +108,10 @@ export const useCreateProduct = () => {
       description?: string;
       price: number;
       image_url?: string;
+      image_url_2?: string;
+      image_url_3?: string;
+      image_url_4?: string;
+      image_url_5?: string;
       stock: number;
     }) => {
       const { data, error } = await supabase

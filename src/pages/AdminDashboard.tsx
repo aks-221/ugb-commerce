@@ -22,6 +22,8 @@ import {
   Loader2,
   Wallet,
   CheckCircle2,
+  MessageCircle,
+  Phone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -817,8 +819,23 @@ const AdminDashboard = () => {
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
                           <h3 className="font-semibold text-foreground text-sm md:text-base">
-                            {order.client?.full_name || "Client"}
+                            {order.client?.full_name || (
+                              order.order_type === 'whatsapp' && order.message
+                                ? order.message.match(/Client:\s*([^-]+)/)?.[1]?.trim() || "Client anonyme"
+                                : "Client anonyme"
+                            )}
                           </h3>
+                          {!order.client && order.order_type === 'whatsapp' && order.message && (
+                            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                              <Phone className="h-3 w-3" />
+                              {order.message.match(/Tél:\s*([^\s-]+)/)?.[1] || ""}
+                            </p>
+                          )}
+                          {order.order_type === 'whatsapp' && (
+                            <span className="px-2 py-0.5 text-[10px] font-medium rounded-full bg-green-100 text-green-700 flex items-center gap-1">
+                              <MessageCircle className="h-3 w-3" /> WhatsApp
+                            </span>
+                          )}
                           <span className="text-xs text-muted-foreground">→</span>
                           <span className="text-xs md:text-sm text-muted-foreground">
                             {order.vendor?.shop_name || "Vendeur"}

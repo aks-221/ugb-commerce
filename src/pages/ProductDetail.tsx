@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Heart, ShoppingCart, BadgeCheck, MapPin, Phone, MessageCircle } from "lucide-react";
+import { ArrowLeft, Heart, ShoppingCart, BadgeCheck, MapPin, Phone, MessageCircle, ChevronLeft, ChevronRight, Loader2, Share2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +9,7 @@ import { useProduct } from "@/hooks/useProducts";
 import { useFavorites, useToggleFavorite } from "@/hooks/useFavorites";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
 
 const ProductDetail = () => {
   const { id } = useParams();
@@ -16,6 +18,13 @@ const ProductDetail = () => {
   const { data: product, isLoading } = useProduct(id || "");
   const { data: favorites = [] } = useFavorites(user?.id);
   const toggleFavorite = useToggleFavorite();
+  const [currentImage, setCurrentImage] = useState(0);
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [orderForm, setOrderForm] = useState({
+  name: "",
+  phone: "",
+});
+const [orderLoading, setOrderLoading] = useState(false);
 
   const isFavorite = favorites.some(f => f.product_id === id);
 
@@ -56,6 +65,15 @@ const ProductDetail = () => {
     );
   }
 
+  // Build images array
+  const images = [
+    product.image_url || "/placeholder.svg",
+    product.image_url_2,
+    product.image_url_3,
+    product.image_url_4,
+    product.image_url_5,
+  ].filter(Boolean) as string[];
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("fr-FR").format(price) + " FCFA";
   };
@@ -95,17 +113,69 @@ const ProductDetail = () => {
     toggleFavorite.mutate({ userId: user.id, productId: product.id, isFavorite });
   };
 
-  const handleDirectOrder = () => {
+  const handleShare = async () => {
+    const url = window.location.href;
+    
+    if (navigator.share) {
+      // Mobile natif (iOS/Android)
+      try {
+        await navigator.share({
+          title: product.name,
+          text: `Découvre "${product.name}" à ${formatPrice(product.price)} sur UAM Commerce 🛒`,
+          url,
+        });
+      } catch (error) {
+        // Annulé par l'utilisateur
+      }
+    } else {
+      // Desktop : copie le lien
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien copié dans le presse-papiers !");
+    }
+};
+
+
+  const handleDirectOrder = async () => {
+    if (!orderForm.name.trim() || !orderForm.phone.trim()) {
+      toast.error("Veuillez remplir tous les champs");
+      return;
+    }
     if (!product.vendor?.phone) {
       toast.error("Numéro du vendeur non disponible");
       return;
     }
-    const message = encodeURIComponent(
-      `Bonjour ${product.vendor.shop_name}, je suis intéressé(e) par votre produit "${product.name}" à ${formatPrice(product.price)} sur UAM Commerce.`
-    );
-    window.open(`https://wa.me/${product.vendor.phone.replace(/\s+/g, "")}?text=${message}`, "_blank");
-  };
 
+    setOrderLoading(true);
+
+    try {
+      const { error } = await supabase.rpc('create_whatsapp_order', {
+        p_vendor_id: product.vendor_id,
+        p_total_amount: product.price,
+        p_message: `Commande directe via WhatsApp - Produit: ${product.name} - Client: ${orderForm.name} - Tél: ${orderForm.phone}`,
+        p_product_id: product.id,
+        p_unit_price: product.price,
+        p_client_id: user?.id || null,
+      });
+
+      if (error) console.error("Erreur commande:", error);
+    } catch (error) {
+      console.error("Erreur:", error);
+    }
+
+    // Ouvre WhatsApp avec les infos du client
+    const message = encodeURIComponent(
+      `Bonjour ${product.vendor.shop_name} 👋\n\nJe suis *${orderForm.name}* et je suis intéressé(e) par votre produit :\n\n📦 *${product.name}*\n💰 ${formatPrice(product.price)}\n📞 Mon numéro : ${orderForm.phone}\n\n_(Via UAM Commerce)_`
+    );
+
+    setOrderLoading(false);
+    setShowOrderForm(false);
+    setOrderForm({ name: "", phone: "" });
+
+    window.open(
+      `https://wa.me/${product.vendor.phone.replace(/\s+/g, "")}?text=${message}`,
+      "_blank"
+    );
+  };
   return (
     <Layout>
       <div className="container py-8">
@@ -119,15 +189,50 @@ const ProductDetail = () => {
         </Link>
 
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image */}
+          {/* Image Gallery */}
           <div className="relative">
-            <div className="aspect-square rounded-3xl overflow-hidden bg-secondary">
+            <div className="aspect-square rounded-3xl overflow-hidden bg-secondary relative">
               <img
-                src={product.image_url || "/placeholder.svg"}
+                src={images[currentImage]}
                 alt={product.name}
                 className="w-full h-full object-cover"
               />
+              
+              {/* Navigation arrows */}
+              {images.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setCurrentImage(prev => prev === 0 ? images.length - 1 : prev - 1)}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground hover:bg-card transition-colors shadow-md"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    onClick={() => setCurrentImage(prev => prev === images.length - 1 ? 0 : prev + 1)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-2 rounded-full bg-card/80 backdrop-blur-sm text-foreground hover:bg-card transition-colors shadow-md"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                </>
+              )}
             </div>
+            
+            {/* Thumbnails */}
+            {images.length > 1 && (
+              <div className="flex gap-3 mt-3">
+                {images.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImage(idx)}
+                    className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-colors ${
+                      currentImage === idx ? "border-primary" : "border-border hover:border-primary/50"
+                    }`}
+                  >
+                    <img src={img} alt={`Vue ${idx + 1}`} className="w-full h-full object-cover" />
+                  </button>
+                ))}
+              </div>
+            )}
             
             {/* Status badges */}
             <div className="absolute top-4 left-4 flex flex-col gap-2">
@@ -151,6 +256,13 @@ const ProductDetail = () => {
               }`}
             >
               <Heart className={`h-5 w-5 ${isFavorite ? "fill-current" : ""}`} />
+            </button>
+            {/* Share button */}
+            <button
+              onClick={handleShare}
+              className="absolute top-4 right-16 p-3 rounded-full bg-card/80 backdrop-blur-sm transition-colors shadow-md text-muted-foreground hover:text-primary"
+            >
+              <Share2 className="h-5 w-5" />
             </button>
           </div>
 
@@ -202,7 +314,7 @@ const ProductDetail = () => {
               <Button
                 size="lg"
                 variant="outline"
-                onClick={handleDirectOrder}
+                onClick={() => setShowOrderForm(true)}
                 className="flex-1 gap-2"
               >
                 <MessageCircle className="h-5 w-5" />
@@ -215,7 +327,7 @@ const ProductDetail = () => {
               <div className="mt-8 p-6 rounded-2xl bg-secondary/50 border border-border">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                    {product.vendor.shop_name.charAt(0)}
+                    {product.vendor.shop_name?.charAt(0)}
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
@@ -260,6 +372,72 @@ const ProductDetail = () => {
           </div>
         </div>
       </div>
+      {/* Dialog commande directe */}
+      {showOrderForm && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-card rounded-2xl p-6 w-full max-w-sm shadow-xl">
+            <h3 className="text-lg font-bold text-foreground mb-1">
+              Commander via WhatsApp
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Entrez vos informations pour contacter le vendeur
+            </p>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Prénom et Nom <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={orderForm.name}
+                  onChange={(e) => setOrderForm({ ...orderForm, name: e.target.value })}
+                  placeholder="Ex: Cheikh Fall"
+                  className="w-full h-11 px-4 rounded-xl bg-secondary border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1.5 block">
+                  Numéro de téléphone <span className="text-destructive">*</span>
+                </label>
+                <input
+                  type="tel"
+                  value={orderForm.phone}
+                  onChange={(e) => setOrderForm({ ...orderForm, phone: e.target.value })}
+                  placeholder="+221 77 123 45 67"
+                  className="w-full h-11 px-4 rounded-xl bg-secondary border-0 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setShowOrderForm(false);
+                  setOrderForm({ name: "", phone: "" });
+                }}
+              >
+                Annuler
+              </Button>
+              <Button
+                className="flex-1 gap-2"
+                disabled={orderLoading || !orderForm.name || !orderForm.phone}
+                onClick={handleDirectOrder}
+              >
+                {orderLoading ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <MessageCircle className="h-5 w-5" />
+                )}
+                Envoyer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   );
 };

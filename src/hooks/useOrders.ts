@@ -76,11 +76,13 @@ export const useCreateOrder = () => {
       totalAmount,
       message,
       items,
+      orderType = 'cart',
     }: {
       clientId: string;
       vendorId: string;
       totalAmount: number;
       message?: string;
+      orderType?: 'cart' | 'whatsapp';
       items: { productId: string; quantity: number; unitPrice: number }[];
     }) => {
       // Create order
