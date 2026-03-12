@@ -56,6 +56,7 @@ export const useAllProducts = () => {
 };
 
 // Admin: All orders
+// Admin: All orders
 export const useAllOrders = () => {
   return useQuery({
     queryKey: ['admin-orders'],
@@ -65,7 +66,6 @@ export const useAllOrders = () => {
         .select(`
           *,
           vendor:vendor_profiles(*),
-          client:profiles(*),
           items:order_items(
             *,
             product:products(*)
@@ -75,7 +75,22 @@ export const useAllOrders = () => {
 
       if (error) throw error;
 
-      return data as Order[];
+      // Filtre les client_id null (commandes anonymes WhatsApp)
+      const clientIds = [...new Set(data.map(o => o.client_id).filter(Boolean))];
+      
+      let profileMap = new Map();
+      if (clientIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('*')
+          .in('user_id', clientIds);
+        profileMap = new Map(profiles?.map(p => [p.user_id, p]) || []);
+      }
+
+      return data.map(order => ({
+        ...order,
+        client: order.client_id ? profileMap.get(order.client_id) : null,
+      })) as Order[];
     },
   });
 };
